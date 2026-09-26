@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Field Monitor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    header h1 { font-size: 1.8rem; color: #4ade80; letter-spacing: 1px; }
+    header p  { font-size: 0.85rem; color: #6b7280; margin-top: 4px; }
+
+    /* -------- Alert banner -------- */
+    .alert-banner {
+      display: none;
+      width: 100%;
+      max-width: 680px;
+      background: #450a0a;
+      border: 1px solid #f87171;
+      color: #fecaca;
+      padding: 12px 18px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      align-items: center;
+      gap: 10px;
+      animation: alertPulse 1.4s infinite;
+    }
+    .alert-banner.show { display: flex; }
+    @keyframes alertPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.5); }
+      50%     { box-shadow: 0 0 0 8px rgba(248,113,113,0); }
+    }
+
+    /* -------- Control panel -------- */
+    .controls {
+      width: 100%;
+      max-width: 680px;
+      background: #1a1d27;
+      border: 1px solid #2d3142;
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+      justify-content: space-between;
+    }
+
+    .mode-switch {
+      display: flex;
+      background: #12151e;
+      border: 1px solid #2d3142;
+      border-radius: 99px;
+      padding: 3px;
+    }
+    .mode-switch button {
+      border: none;
+      background: transparent;
+      color: #6b7280;
+      padding: 7px 16px;
+      border-radius: 99px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mode-switch button.active {
+      background: #4ade80;
+      color: #0f1117;
+    }
+
+    .capture-btn {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .capture-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .capture-btn:active:not(:disabled) { opacity: 0.7; }
+
+    .interval-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: #9ca3af;
+    }
+    .interval-box input {
+      width: 70px;
+      background: #12151e;
+      border: 1px solid #2d3142;
+      color: #e0e0e0;
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-size: 0.82rem;
+    }
+    .interval-box button {
+      background: #2d3142;
+      color: #e0e0e0;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+
+    .card {
+      background: #1a1d27;
+      border: 1px solid #2d3142;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 680px;
+      overflow: hidden;
+    }
+
+    .img-wrap {
+      width: 100%;
+      background: #111318;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 240px;
+    }
+    .img-wrap img {
+      width: 100%;
+      max-height: 420px;
+      object-fit: contain;
+      display: block;
+    }
+    .img-wrap .placeholder {
+      color: #4b5563;
+      font-size: 0.9rem;
+    }
+
+    .info { padding: 20px; }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 99px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+      letter-spacing: 0.5px;
+    }
+    .badge.healthy  { background: #14532d; color: #4ade80; }
+    .badge.diseased { background: #450a0a; color: #f87171; }
+    .badge.stressed { background: #431407; color: #fb923c; }
+    .badge.unknown  { background: #1e1b4b; color: #a5b4fc; }
+
+    .analysis {
+      background: #12151e;
+      border: 1px solid #2d3142;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 0.88rem;
+      line-height: 1.75;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+
+    .meta {
+      margin-top: 14px;
+      font-size: 0.75rem;
+      color: #4b5563;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      background: #4ade80;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.3; }
+    }
+
+    .waiting {
+      text-align: center;
+      padding: 48px 20px;
+      color: #4b5563;
+    }
+    .waiting svg { margin-bottom: 12px; opacity: 0.4; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🌿 Field Monitor</h1>
+  <p>AI-powered crop health • auto-updates every 15s</p>
+</header>
+
+<div class="alert-banner" id="alertBanner">
+  ⚠️ <span id="alertText">Disease detected in latest capture!</span>
+</div>
+
+<div class="controls">
+  <div class="mode-switch" id="modeSwitch">
+    <button id="btnAuto" onclick="setMode('auto')">Auto</button>
+    <button id="btnManual" onclick="setMode('manual')">Manual</button>
+  </div>
+
+  <button class="capture-btn" id="captureBtn" onclick="captureNow()">📸 Capture Now</button>
+
+  <div class="interval-box" id="intervalBox">
+    <span>Interval (s):</span>
+    <input type="number" id="intervalInput" min="5" value="60"/>
+    <button onclick="saveInterval()">Save</button>
+  </div>
+</div>
+
+<div class="card" id="card">
+  <div class="waiting" id="waiting">
+    <svg width="48" height="48" fill="none" stroke="#4b5563" stroke-width="1.5" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+    </svg>
+    <p>Waiting for first image from ESP32…</p>
+  </div>
+</div>
+
+<script>
+  let currentMode = 'auto';
+
+  function updateModeUI() {
+    document.getElementById('btnAuto').classList.toggle('active', currentMode === 'auto');
+    document.getElementById('btnManual').classList.toggle('active', currentMode === 'manual');
+    document.getElementById('captureBtn').disabled = currentMode !== 'manual';
+    document.getElementById('intervalBox').style.display = currentMode === 'auto' ? 'flex' : 'none';
+  }
+
+  async function setMode(mode) {
+    currentMode = mode;
+    updateModeUI();
+    try {
+      await fetch('/mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode })
+      });
+    } catch (e) { console.error('setMode error:', e); }
+  }
+
+  async function captureNow() {
+    const btn = document.getElementById('captureBtn');
+    btn.disabled = true;
+    btn.textContent = '📸 Capturing…';
+    try {
+      await fetch('/capture', { method: 'POST' });
+    } catch (e) { console.error('capture error:', e); }
+    setTimeout(() => {
+      btn.textContent = '📸 Capture Now';
+      btn.disabled = currentMode !== 'manual';
+    }, 4000);
+  }
+
+  async function saveInterval() {
+    const seconds = parseInt(document.getElementById('intervalInput').value, 10);
+    if (!seconds || seconds < 5) return;
+    try {
+      await fetch('/interval', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interval_ms: seconds * 1000 })
+      });
+    } catch (e) { console.error('saveInterval error:', e); }
+  }
+
+  async function syncStatus() {
+    try {
+      const res = await fetch('/status');
+      const data = await res.json();
+      currentMode = data.mode;
+      document.getElementById('intervalInput').value = Math.round(data.interval_ms / 1000);
+      updateModeUI();
+    } catch (e) { console.error('status error:', e); }
+  }
+
+  async function refresh() {
+    try {
+      const res  = await fetch('/latest');
+      const data = await res.json();
+
+      if (!data.url) return;   // no image yet
+
+      const statusRaw = (data.status || '').toLowerCase();
+      let badgeClass = 'unknown';
+      if (statusRaw.includes('healthy'))  badgeClass = 'healthy';
+      else if (statusRaw.includes('disease')) badgeClass = 'diseased';
+      else if (statusRaw.includes('stress'))  badgeClass = 'stressed';
+
+      const banner = document.getElementById('alertBanner');
+      if (data.disease_detected) {
+        document.getElementById('alertText').textContent =
+          `Disease detected at ${data.timestamp || 'latest capture'} — check the field.`;
+        banner.classList.add('show');
+      } else {
+        banner.classList.remove('show');
+      }
+
+      document.getElementById('card').innerHTML = `
+        <div class="img-wrap">
+          <img src="${data.url}" alt="Field image" />
+        </div>
+        <div class="info">
+          <span class="badge ${badgeClass}">${data.status || 'Unknown'}</span>
+          <div class="analysis">${data.analysis || 'No analysis yet.'}</div>
+          <div class="meta">
+            <span><span class="dot"></span>Live</span>
+            <span>Last update: ${data.timestamp || '—'}</span>
+          </div>
+        </div>`;
+    } catch (e) {
+      console.error('Fetch error:', e);
+    }
+  }
+
+  updateModeUI();
+  syncStatus();
+  refresh();
+  setInterval(refresh, 15000);
+  setInterval(syncStatus, 15000);
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: field-monitor-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false   # paste in Render dashboard
+      - key: IMAGEKIT_PRIVATE_KEY
+        sync: false   # e.g. private_fF0Uzc5Q...  (moved OFF the ESP32)
+      - key: DEVICE_SECRET
+        sync: false   # any long random string, copy exactly into ESP32 firmware
