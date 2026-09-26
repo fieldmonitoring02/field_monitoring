@@ -5,253 +5,478 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Field Monitor</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0f1117;
-      color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
       min-height: 100vh;
+      padding: 20px 30px;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-      padding: 24px 16px;
+      padding: 12px 24px;
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      margin-bottom: 18px;
     }
 
-    header {
-      text-align: center;
-      margin-bottom: 20px;
+    .header-left h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #1a1a2e;
+      letter-spacing: -0.5px;
     }
-    header h1 { font-size: 1.8rem; color: #4ade80; letter-spacing: 1px; }
-    header p  { font-size: 0.85rem; color: #6b7280; margin-top: 4px; }
+    .header-left h1 span {
+      color: #2e7d32;
+    }
+    .header-left p {
+      font-size: 14px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
 
-    /* -------- Alert banner -------- */
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+    .live-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background: #22c55e;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse-dot 1.8s infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    /* ===== ALERT BANNER ===== */
     .alert-banner {
       display: none;
-      width: 100%;
-      max-width: 680px;
-      background: #450a0a;
-      border: 1px solid #f87171;
-      color: #fecaca;
-      padding: 12px 18px;
-      border-radius: 12px;
+      background: #fee2e2;
+      border-left: 5px solid #dc2626;
+      padding: 12px 20px;
+      border-radius: 10px;
       margin-bottom: 16px;
-      font-size: 0.9rem;
+      color: #991b1b;
       font-weight: 600;
-      align-items: center;
-      gap: 10px;
-      animation: alertPulse 1.4s infinite;
+      font-size: 15px;
     }
-    .alert-banner.show { display: flex; }
-    @keyframes alertPulse {
-      0%,100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.5); }
-      50%     { box-shadow: 0 0 0 8px rgba(248,113,113,0); }
+    .alert-banner.show {
+      display: block;
+    }
+    .alert-banner .alert-icon {
+      margin-right: 10px;
     }
 
-    /* -------- Control panel -------- */
+    /* ===== CONTROLS ===== */
     .controls {
-      width: 100%;
-      max-width: 680px;
-      background: #1a1d27;
-      border: 1px solid #2d3142;
-      border-radius: 16px;
-      padding: 16px 20px;
-      margin-bottom: 16px;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 14px;
-      justify-content: space-between;
+      gap: 16px;
+      background: #ffffff;
+      padding: 14px 22px;
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
     }
 
     .mode-switch {
       display: flex;
-      background: #12151e;
-      border: 1px solid #2d3142;
-      border-radius: 99px;
+      background: #e5e7eb;
+      border-radius: 30px;
       padding: 3px;
     }
     .mode-switch button {
       border: none;
       background: transparent;
-      color: #6b7280;
-      padding: 7px 16px;
-      border-radius: 99px;
-      font-size: 0.8rem;
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.15s;
+      color: #4b5563;
+      transition: all 0.2s;
     }
     .mode-switch button.active {
-      background: #4ade80;
-      color: #0f1117;
+      background: #1a1a2e;
+      color: #ffffff;
+    }
+    .mode-switch button:hover:not(.active) {
+      background: #d1d5db;
     }
 
     .capture-btn {
       background: #2563eb;
       color: #fff;
       border: none;
-      padding: 9px 18px;
-      border-radius: 10px;
-      font-size: 0.82rem;
+      padding: 10px 24px;
+      border-radius: 30px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: opacity 0.15s;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .capture-btn:hover:not(:disabled) {
+      background: #1d4ed8;
+      transform: scale(1.02);
     }
     .capture-btn:disabled {
-      opacity: 0.4;
+      opacity: 0.5;
       cursor: not-allowed;
     }
-    .capture-btn:active:not(:disabled) { opacity: 0.7; }
+    .capture-btn.loading {
+      background: #6b7280;
+      pointer-events: none;
+    }
 
     .interval-box {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 0.8rem;
-      color: #9ca3af;
+      gap: 10px;
+      font-size: 14px;
+      color: #4b5563;
+      margin-left: auto;
+    }
+    .interval-box label {
+      font-weight: 500;
     }
     .interval-box input {
       width: 70px;
-      background: #12151e;
-      border: 1px solid #2d3142;
-      color: #e0e0e0;
+      padding: 7px 10px;
+      border: 1.5px solid #d1d5db;
       border-radius: 8px;
-      padding: 6px 8px;
-      font-size: 0.82rem;
+      font-size: 14px;
+      text-align: center;
+      background: #f9fafb;
+      color: #1a1a2e;
     }
-    .interval-box button {
-      background: #2d3142;
-      color: #e0e0e0;
+    .interval-box input:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+    .interval-box .save-btn {
+      background: #e5e7eb;
       border: none;
-      padding: 6px 12px;
+      padding: 7px 16px;
       border-radius: 8px;
-      font-size: 0.78rem;
+      font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
+      color: #1a1a2e;
+      transition: background 0.2s;
+    }
+    .interval-box .save-btn:hover {
+      background: #d1d5db;
     }
 
-    .card {
-      background: #1a1d27;
-      border: 1px solid #2d3142;
-      border-radius: 16px;
-      width: 100%;
-      max-width: 680px;
+    /* ===== MAIN 2-COLUMN LAYOUT ===== */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      min-height: 500px;
+    }
+
+    /* ===== LEFT COLUMN - IMAGE ===== */
+    .image-card {
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       overflow: hidden;
-    }
-
-    .img-wrap {
-      width: 100%;
-      background: #111318;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 240px;
+      min-height: 500px;
+      position: relative;
     }
-    .img-wrap img {
+
+    .image-card img {
       width: 100%;
-      max-height: 420px;
+      height: 100%;
+      max-height: 600px;
       object-fit: contain;
       display: block;
     }
-    .img-wrap .placeholder {
-      color: #4b5563;
-      font-size: 0.9rem;
-    }
 
-    .info { padding: 20px; }
-
-    .badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 99px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      margin-bottom: 14px;
-      letter-spacing: 0.5px;
-    }
-    .badge.healthy  { background: #14532d; color: #4ade80; }
-    .badge.diseased { background: #450a0a; color: #f87171; }
-    .badge.stressed { background: #431407; color: #fb923c; }
-    .badge.unknown  { background: #1e1b4b; color: #a5b4fc; }
-
-    .analysis {
-      background: #12151e;
-      border: 1px solid #2d3142;
-      border-radius: 10px;
-      padding: 14px 16px;
-      font-size: 0.88rem;
-      line-height: 1.75;
-      white-space: pre-wrap;
-      color: #cbd5e1;
-    }
-
-    .meta {
-      margin-top: 14px;
-      font-size: 0.75rem;
-      color: #4b5563;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .dot {
-      width: 8px; height: 8px;
-      background: #4ade80;
-      border-radius: 50%;
-      display: inline-block;
-      margin-right: 6px;
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%,100% { opacity: 1; }
-      50%      { opacity: 0.3; }
-    }
-
-    .waiting {
+    .image-placeholder {
       text-align: center;
-      padding: 48px 20px;
-      color: #4b5563;
+      color: #9ca3af;
+      padding: 40px;
     }
-    .waiting svg { margin-bottom: 12px; opacity: 0.4; }
+    .image-placeholder svg {
+      margin-bottom: 14px;
+      opacity: 0.4;
+    }
+    .image-placeholder p {
+      font-size: 15px;
+    }
+
+    /* ===== RIGHT COLUMN - INFO ===== */
+    .info-card {
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      padding: 28px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Status Badge */
+    .status-badge {
+      display: inline-block;
+      padding: 6px 20px;
+      border-radius: 30px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      width: fit-content;
+    }
+    .status-badge.healthy {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .status-badge.diseased {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .status-badge.stressed {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .status-badge.unknown {
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+
+    /* Analysis Text */
+    .analysis-box {
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 16px 20px;
+      flex: 1;
+      min-height: 120px;
+      border: 1px solid #e5e7eb;
+    }
+    .analysis-box .label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #6b7280;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .analysis-box .text {
+      font-size: 15px;
+      line-height: 1.7;
+      color: #1a1a2e;
+      white-space: pre-wrap;
+    }
+    .analysis-box .text.empty {
+      color: #9ca3af;
+      font-style: italic;
+    }
+
+    /* Meta Info */
+    .meta-info {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+      color: #4b5563;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 14px;
+    }
+    .meta-info .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .meta-info .row .icon {
+      font-size: 16px;
+      width: 24px;
+      text-align: center;
+    }
+    .meta-info .row .value {
+      font-weight: 500;
+      color: #1a1a2e;
+    }
+
+    /* ===== WAITING STATE ===== */
+    .waiting-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 300px;
+      color: #9ca3af;
+    }
+    .waiting-state svg {
+      opacity: 0.3;
+      margin-bottom: 16px;
+    }
+    .waiting-state p {
+      font-size: 16px;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+      .image-card {
+        min-height: 300px;
+      }
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .controls {
+        flex-wrap: wrap;
+      }
+      .interval-box {
+        margin-left: 0;
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+      .header-left h1 {
+        font-size: 20px;
+      }
+      .info-card {
+        padding: 18px;
+      }
+      .mode-switch button {
+        padding: 6px 14px;
+        font-size: 12px;
+      }
+      .capture-btn {
+        padding: 8px 16px;
+        font-size: 12px;
+      }
+    }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>🌿 Field Monitor</h1>
-  <p>AI-powered crop health • auto-updates every 15s</p>
-</header>
-
-<div class="alert-banner" id="alertBanner">
-  ⚠️ <span id="alertText">Disease detected in latest capture!</span>
+<!-- ===== HEADER ===== -->
+<div class="header">
+  <div class="header-left">
+    <h1>🌿 Field <span>Monitor</span></h1>
+    <p>AI-powered crop health monitoring</p>
+  </div>
+  <div class="header-right">
+    <span><span class="live-dot"></span> Live</span>
+    <span id="headerTime">—</span>
+  </div>
 </div>
 
+<!-- ===== ALERT BANNER ===== -->
+<div class="alert-banner" id="alertBanner">
+  <span class="alert-icon">⚠️</span>
+  <span id="alertText">Disease detected in latest capture!</span>
+</div>
+
+<!-- ===== CONTROLS ===== -->
 <div class="controls">
   <div class="mode-switch" id="modeSwitch">
     <button id="btnAuto" onclick="setMode('auto')">Auto</button>
     <button id="btnManual" onclick="setMode('manual')">Manual</button>
   </div>
 
-  <button class="capture-btn" id="captureBtn" onclick="captureNow()">📸 Capture Now</button>
+  <button class="capture-btn" id="captureBtn" onclick="captureNow()">
+    📸 Capture Now
+  </button>
 
   <div class="interval-box" id="intervalBox">
-    <span>Interval (s):</span>
+    <label>Interval (s):</label>
     <input type="number" id="intervalInput" min="5" value="60"/>
-    <button onclick="saveInterval()">Save</button>
+    <button class="save-btn" onclick="saveInterval()">Save</button>
   </div>
 </div>
 
-<div class="card" id="card">
-  <div class="waiting" id="waiting">
-    <svg width="48" height="48" fill="none" stroke="#4b5563" stroke-width="1.5" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-    </svg>
-    <p>Waiting for first image from ESP32…</p>
+<!-- ===== MAIN 2-COLUMN ===== -->
+<div class="main-grid">
+
+  <!-- ===== LEFT: IMAGE ===== -->
+  <div class="image-card" id="imageCard">
+    <div class="image-placeholder" id="imagePlaceholder">
+      <svg width="64" height="64" fill="none" stroke="#9ca3af" stroke-width="1.5" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <path d="M21 15l-5-5-5 5-4-4-4 4"/>
+      </svg>
+      <p>Waiting for first image...</p>
+    </div>
+    <img id="mainImage" style="display:none;" alt="Field image" />
   </div>
+
+  <!-- ===== RIGHT: INFO ===== -->
+  <div class="info-card" id="infoCard">
+    <!-- Status -->
+    <div>
+      <span class="status-badge unknown" id="statusBadge">UNKNOWN</span>
+    </div>
+
+    <!-- Analysis -->
+    <div class="analysis-box">
+      <div class="label">📝 Analysis</div>
+      <div class="text empty" id="analysisText">Waiting for analysis...</div>
+    </div>
+
+    <!-- Meta -->
+    <div class="meta-info">
+      <div class="row">
+        <span class="icon">🕐</span>
+        <span>Last update:</span>
+        <span class="value" id="metaTime">—</span>
+      </div>
+      <div class="row">
+        <span class="icon">🏷️</span>
+        <span>Image ID:</span>
+        <span class="value" id="metaId">—</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
   let currentMode = 'auto';
+  let refreshInterval = null;
 
+  // ============================================================
+  // UI HELPERS
+  // ============================================================
   function updateModeUI() {
     document.getElementById('btnAuto').classList.toggle('active', currentMode === 'auto');
     document.getElementById('btnManual').classList.toggle('active', currentMode === 'manual');
@@ -259,6 +484,33 @@
     document.getElementById('intervalBox').style.display = currentMode === 'auto' ? 'flex' : 'none';
   }
 
+  function setStatusBadge(status) {
+    const badge = document.getElementById('statusBadge');
+    const s = (status || 'UNKNOWN').toUpperCase();
+    badge.textContent = s;
+    badge.className = 'status-badge ' + s.toLowerCase();
+  }
+
+  function showAlert(show, text) {
+    const banner = document.getElementById('alertBanner');
+    if (show) {
+      document.getElementById('alertText').textContent = text || 'Disease detected!';
+      banner.classList.add('show');
+    } else {
+      banner.classList.remove('show');
+    }
+  }
+
+  function updateHeaderTime() {
+    const now = new Date();
+    document.getElementById('headerTime').textContent = now.toLocaleTimeString();
+  }
+  setInterval(updateHeaderTime, 10000);
+  updateHeaderTime();
+
+  // ============================================================
+  // API CALLS
+  // ============================================================
   async function setMode(mode) {
     currentMode = mode;
     updateModeUI();
@@ -268,18 +520,24 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode })
       });
-    } catch (e) { console.error('setMode error:', e); }
+    } catch (e) {
+      console.error('setMode error:', e);
+    }
   }
 
   async function captureNow() {
     const btn = document.getElementById('captureBtn');
     btn.disabled = true;
-    btn.textContent = '📸 Capturing…';
+    btn.classList.add('loading');
+    btn.innerHTML = '⏳ Capturing...';
     try {
       await fetch('/capture', { method: 'POST' });
-    } catch (e) { console.error('capture error:', e); }
+    } catch (e) {
+      console.error('capture error:', e);
+    }
     setTimeout(() => {
-      btn.textContent = '📸 Capture Now';
+      btn.innerHTML = '📸 Capture Now';
+      btn.classList.remove('loading');
       btn.disabled = currentMode !== 'manual';
     }, 4000);
   }
@@ -293,63 +551,95 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ interval_ms: seconds * 1000 })
       });
-    } catch (e) { console.error('saveInterval error:', e); }
+    } catch (e) {
+      console.error('saveInterval error:', e);
+    }
   }
 
   async function syncStatus() {
     try {
       const res = await fetch('/status');
       const data = await res.json();
-      currentMode = data.mode;
-      document.getElementById('intervalInput').value = Math.round(data.interval_ms / 1000);
+      currentMode = data.mode || 'auto';
+      document.getElementById('intervalInput').value = Math.round((data.interval_ms || 60000) / 1000);
       updateModeUI();
-    } catch (e) { console.error('status error:', e); }
-  }
-
-  async function refresh() {
-    try {
-      const res  = await fetch('/latest');
-      const data = await res.json();
-
-      if (!data.url) return;   // no image yet
-
-      const statusRaw = (data.status || '').toLowerCase();
-      let badgeClass = 'unknown';
-      if (statusRaw.includes('healthy'))  badgeClass = 'healthy';
-      else if (statusRaw.includes('disease')) badgeClass = 'diseased';
-      else if (statusRaw.includes('stress'))  badgeClass = 'stressed';
-
-      const banner = document.getElementById('alertBanner');
-      if (data.disease_detected) {
-        document.getElementById('alertText').textContent =
-          `Disease detected at ${data.timestamp || 'latest capture'} — check the field.`;
-        banner.classList.add('show');
-      } else {
-        banner.classList.remove('show');
-      }
-
-      document.getElementById('card').innerHTML = `
-        <div class="img-wrap">
-          <img src="${data.url}" alt="Field image" />
-        </div>
-        <div class="info">
-          <span class="badge ${badgeClass}">${data.status || 'Unknown'}</span>
-          <div class="analysis">${data.analysis || 'No analysis yet.'}</div>
-          <div class="meta">
-            <span><span class="dot"></span>Live</span>
-            <span>Last update: ${data.timestamp || '—'}</span>
-          </div>
-        </div>`;
     } catch (e) {
-      console.error('Fetch error:', e);
+      console.error('status error:', e);
     }
   }
 
+  // ============================================================
+  // REFRESH - LOAD LATEST DATA
+  // ============================================================
+  async function refresh() {
+    try {
+      const res = await fetch('/latest');
+      const data = await res.json();
+
+      // --- Image ---
+      const img = document.getElementById('mainImage');
+      const placeholder = document.getElementById('imagePlaceholder');
+
+      if (data.url) {
+        img.src = data.url + '?t=' + Date.now();
+        img.style.display = 'block';
+        placeholder.style.display = 'none';
+      } else {
+        img.style.display = 'none';
+        placeholder.style.display = 'block';
+      }
+
+      // --- Status ---
+      const status = data.status || 'UNKNOWN';
+      setStatusBadge(status);
+
+      // --- Alert ---
+      const disease = data.disease_detected || false;
+      if (disease) {
+        showAlert(true, `Disease detected at ${data.timestamp || 'latest capture'}`);
+      } else {
+        showAlert(false);
+      }
+
+      // --- Analysis ---
+      const analysisEl = document.getElementById('analysisText');
+      if (data.analysis && data.analysis.length > 0) {
+        analysisEl.textContent = data.analysis;
+        analysisEl.className = 'text';
+      } else {
+        analysisEl.textContent = 'No analysis yet.';
+        analysisEl.className = 'text empty';
+      }
+
+      // --- Meta ---
+      document.getElementById('metaTime').textContent = data.timestamp || '—';
+      // Extract image ID from URL or use fallback
+      let id = '—';
+      if (data.url) {
+        const parts = data.url.split('/');
+        id = parts[parts.length - 1] || '—';
+        if (id.length > 20) id = id.substring(0, 12) + '...';
+      }
+      document.getElementById('metaId').textContent = id;
+
+    } catch (e) {
+      console.error('Refresh error:', e);
+    }
+  }
+
+  // ============================================================
+  // INIT
+  // ============================================================
   updateModeUI();
   syncStatus();
   refresh();
+
+  // Auto-refresh every 15 seconds
   setInterval(refresh, 15000);
   setInterval(syncStatus, 15000);
+
+  console.log('✅ Field Monitor UI loaded successfully!');
 </script>
+
 </body>
 </html>

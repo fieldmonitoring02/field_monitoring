@@ -11,56 +11,50 @@ from google.genai import types
 app = FastAPI()
 gemini = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
+# Fallback-এর জন্য মডেল লিস্ট (যে ক্রমানুসারে ট্রাই করতে চান)
+MODELS_TO_TRY = [
+    # "gemini-3.6-flash",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "gemini-2.5-flash-lite",
+    "gemini-3.1-flash-lite"
+]
+
 # ---------------------------------------------------------------------------
-# In-memory state (fine for a single ESP32 device / single-instance deploy)
+# In-memory state
 # ---------------------------------------------------------------------------
 state = {
-    # capture mode: "auto" or "manual"
     "mode": "auto",
-    # auto-capture interval in milliseconds, editable from the dashboard
     "interval_ms": 60000,
-    # timestamp (server epoch seconds) of the last auto capture that was issued
     "last_auto_capture_ts": 0.0,
-    # one-shot flag set by the dashboard "Capture Now" button (manual mode)
     "capture_pending": False,
 }
 
 latest = {
     "url": None,
     "analysis": "Waiting for first image...",
-    "status": "Unknown",          # HEALTHY / DISEASED / STRESSED / UNKNOWN
+    "status": "Unknown",
     "disease_detected": False,
     "timestamp": None,
 }
 
-
 class ImagePayload(BaseModel):
     image_url: str
 
-
 class ModePayload(BaseModel):
-    mode: str  # "auto" | "manual"
-
+    mode: str 
 
 class IntervalPayload(BaseModel):
     interval_ms: int
 
-
 # ---------------------------------------------------------------------------
-# Dashboard
+# Dashboard & Command Endpoints
 # ---------------------------------------------------------------------------
 @app.get("/")
 async def root():
     with open("index.html") as f:
         return HTMLResponse(f.read())
 
-
-# ---------------------------------------------------------------------------
-# ESP32 polls this endpoint every few seconds to find out whether it should
-# capture right now, and what mode/interval it should be operating under.
-# The device itself stays "dumb" — all scheduling logic lives on the server
-# so it can be reconfigured live from the web dashboard without reflashing.
-# ---------------------------------------------------------------------------
 @app.get("/command")
 async def get_command():
     now = time.time()
@@ -71,7 +65,7 @@ async def get_command():
         if now - state["last_auto_capture_ts"] >= interval_s:
             state["last_auto_capture_ts"] = now
             should_capture = True
-    else:  # manual mode
+    else: 
         if state["capture_pending"]:
             state["capture_pending"] = False
             should_capture = True
@@ -82,17 +76,14 @@ async def get_command():
         "capture": should_capture,
     }
 
-
 @app.post("/mode")
 async def set_mode(payload: ModePayload):
     if payload.mode not in ("auto", "manual"):
         return {"status": "error", "message": "mode must be 'auto' or 'manual'"}
     state["mode"] = payload.mode
-    # reset any pending manual trigger / auto timer so the switch feels immediate
     state["capture_pending"] = False
     state["last_auto_capture_ts"] = time.time()
     return {"status": "ok", "mode": state["mode"]}
-
 
 @app.post("/interval")
 async def set_interval(payload: IntervalPayload):
@@ -101,21 +92,17 @@ async def set_interval(payload: IntervalPayload):
     state["interval_ms"] = payload.interval_ms
     return {"status": "ok", "interval_ms": state["interval_ms"]}
 
-
 @app.post("/capture")
 async def trigger_capture():
-    """Dashboard 'Capture Now' button — only meaningful in manual mode."""
     state["capture_pending"] = True
     return {"status": "ok", "message": "capture requested"}
-
 
 @app.get("/status")
 async def get_status():
     return state
 
-
 # ---------------------------------------------------------------------------
-# Image upload + Gemini analysis
+# Image upload + Gemini analysis with Fallback
 # ---------------------------------------------------------------------------
 ANALYSIS_PROMPT = (
     "You are an agricultural crop-health inspector analyzing a field image.\n"
@@ -125,7 +112,6 @@ ANALYSIS_PROMPT = (
     "ANALYSIS: <a detailed explanation, under 100 words, describing plant health, "
     "any visible disease/pest/stress signs, and a brief recommendation>"
 )
-
 
 def parse_gemini_response(text: str):
     lines = text.strip().splitlines()
@@ -151,7 +137,6 @@ def parse_gemini_response(text: str):
 
     return status, alert, analysis
 
-
 @app.post("/upload")
 async def upload(payload: ImagePayload):
     url = payload.image_url
@@ -159,16 +144,35 @@ async def upload(payload: ImagePayload):
         r = await http.get(url)
         img_b64 = base64.b64encode(r.content).decode()
 
-    response = gemini.models.generate_content(
-        model="gemini-1.5-flash",
-        contents=[
-            types.Part(inline_data=types.Blob(mime_type="image/jpeg", data=img_b64)),
-            types.Part(text=ANALYSIS_PROMPT),
-        ],
-    )
+    response_text = None
+    used_model = None
 
-    status, alert, analysis = parse_gemini_response(response.text)
-    disease_detected = status == "DISEASED"
+    # Fallback Loop: সিরিয়ালি একেকটি মডেল দিয়ে ট্রাই করবে
+    for model_name in MODELS_TO_TRY:
+        try:
+            response = gemini.models.generate_content(
+                model=model_name,
+                contents=[
+                    types.Part(inline_data=types.Blob(mime_type="image/jpeg", data=img_b64)),
+                    types.Part(text=ANALYSIS_PROMPT),
+                ],
+            )
+            response_text = response.text
+            used_model = model_name
+            print(f"Success: Image analyzed using {used_model}")
+            break # সফল হলে লুপ থেকে বেরিয়ে যাবে
+        except Exception as e:
+            print(f"Warning: Model {model_name} failed. Error: {e}")
+            continue # ফেইল করলে পরের মডেলে ট্রাই করবে
+
+    # যদি সবগুলো মডেলই ফেইল করে
+    if not response_text:
+        status, alert = "UNKNOWN", "API ERROR"
+        analysis = "All Gemini models failed to process the image."
+        disease_detected = False
+    else:
+        status, alert, analysis = parse_gemini_response(response_text)
+        disease_detected = status == "DISEASED"
 
     latest["url"] = url
     latest["analysis"] = analysis
@@ -176,15 +180,13 @@ async def upload(payload: ImagePayload):
     latest["disease_detected"] = disease_detected
     latest["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
-    # This payload is what the ESP32 receives back in the HTTP response body
-    # from notifyBackend() — it uses "status" + "alert" to drive the OLED.
     return {
         "status": status,
         "alert": alert or status,
         "disease_detected": disease_detected,
         "analysis": analysis,
+        "used_model": used_model # কোন মডেল কাজ করেছে তা চেক করার জন্য
     }
-
 
 @app.get("/latest")
 async def get_latest():
